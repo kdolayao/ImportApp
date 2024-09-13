@@ -1,0 +1,16 @@
+﻿@model ImportApp.Models.ImportViewModel
+
+@if (ViewBag.ExampleRow != null)
+{
+
+    <p>Valid Rows: @ViewBag.ValidRowCount / @ViewBag.TotalRows</p>
+    <div>
+        @foreach (var kvp in ViewBag.ExampleRow)
+        {
+            <div class="row mb-2">
+                <div class="col-md-4" style="font-weight: bold;">@kvp.Key:</div>
+                <div class="col-md-8">@kvp.Value</div>
+            </div>
+        }
+    </div>
+}

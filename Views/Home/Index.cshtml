@@ -1,0 +1,136 @@
+﻿@model ImportApp.Models.ImportViewModel
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- First Modal -->
+        <div class="col-md-6">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Import</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- File input for uploading -->
+                        @if (!Model.IsFileUploaded)
+                        {
+                            <form enctype="multipart/form-data" asp-action="UploadFile" method="post">
+                                <div class="mb-3">
+                                    <label for="uploadedFile" class="form-label">Upload File:</label>
+                                    <input type="file" class="form-control" name="uploadedFile" id="uploadedFile" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="rowNumber" class="form-label">Row number from which data starts:</label>
+                                    <select class="form-select" id="rowNumber" name="rowNumber">
+                                        @for (int i = 1; i <= 10; i++)
+                                        {
+                                            <option value="@i">@i</option>
+                                        }
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-success">Upload and Parse</button>
+                            </form>
+                        }
+
+                        <!-- Dropdowns for selecting columns -->
+                        @if (Model.Headers != null && Model.Headers.Any())
+                        {
+                            @foreach (var staticName in ImportViewModel.StaticColumns)
+                            {
+                                <div class="mb-3">
+                                    <label for="@staticName" class="form-label">@staticName:</label>
+                                    <select class="form-select" name="ColumnMappings[@staticName].SelectedColumn">
+                                        <option value="">Select a column</option>
+                                        @if (Model.ColumnValues.ContainsKey(staticName))
+                                        {
+                                            @foreach (var value in Model.ColumnValues[staticName])
+                                            {
+                                                <option value="@value">@value</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <div class="modal-footer">
+                        <!-- Validate button -->
+                        <form id="validateForm" asp-action="ValidateFile" method="post">
+                            <input type="hidden" name="rowNumber" value="@Model.StartingRow" />
+                            @if (Model.Headers != null && Model.Headers.Any())
+                            {
+                                @foreach (var header in Model.Headers)
+                                {
+                                    <input type="hidden" name="Headers" value="@header" />
+                                }
+                            }
+                            @if (Model.ColumnMappings != null && Model.ColumnMappings.Any())
+                            {
+                                @foreach (var mapping in Model.ColumnMappings)
+                                {
+                                    <input type="hidden" name="ColumnMappings[@mapping.StaticName].SelectedColumn" value="@mapping.SelectedColumn" />
+                                }
+                            }
+                            @if (Model.ColumnValues != null && Model.ColumnValues.Any())
+                            {
+                                @foreach (var kvp in Model.ColumnValues)
+                                {
+                                    @foreach (var value in kvp.Value)
+                                    {
+                                        <input type="hidden" name="ColumnValues[@kvp.Key]" value="@value" />
+                                    }
+                                }
+                            }
+                            <button type="submit" class="btn btn-primary">Validate</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Second Modal -->
+        <div class="col-md-6">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Data Preview</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Show data preview and total rows -->
+                        <div id="validationResult"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <form id="importForm" asp-action="ImportFile" method="post">
+                            <input type="hidden" name="rowNumber" value="@Model.StartingRow" />
+                            <button type="submit" class="btn btn-success">Import</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#validateForm').submit(function (event) {
+            event.preventDefault(); 
+
+            $.ajax({
+                type: 'POST',
+                url: '@Url.Action("ValidateFile", "Home")',
+                data: $(this).serialize(),
+                success: function (response) {
+                    $('#validationResult').html(response);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error:', error);
+                }
+            });
+        });
+    });
+</script>
